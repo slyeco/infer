@@ -1,2 +1,3 @@
 # infer
-cloud inference for treeage sensors
+
+demo of flask -> streamlit microservice for cloud inference
