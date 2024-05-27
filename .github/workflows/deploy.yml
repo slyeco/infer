@@ -1,0 +1,35 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up SSH
+      uses: webfactory/ssh-agent@v0.5.3
+      with:
+        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+    - name: Copy files to EC2
+      run: |
+        scp -r -o StrictHostKeyChecking=no * ubuntu@ec2-15-160-180-143.eu-south-1.compute.amazonaws.com:/home/ubuntu/infer
+
+    - name: SSH into EC2 and deploy
+      run: |
+        ssh -o StrictHostKeyChecking=no ubuntu@ec2-15-160-180-143.eu-south-1.compute.amazonaws.com << 'EOF'
+        cd /home/ubuntu/infer
+        source venv/bin/activate
+        pip install -r requirements.txt
+        pkill -f flask_app.py || true
+        pkill -f streamlit || true
+        nohup python flask_app.py &
+        nohup streamlit run streamlit_app.py --server.port 8501 &
+        EOF
