@@ -1,4 +1,3 @@
-# streamlit_app.py
 import streamlit as st
 import requests
 import pandas as pd
@@ -7,11 +6,14 @@ import time
 st.title('IoT Data Dashboard')
 
 # Fetch data from the Flask server
+@st.cache_data(ttl=60)
 def fetch_data():
-    response = requests.get('http://localhost:5000/data')
-    if response.status_code == 200:
+    try:
+        response = requests.get('http://localhost:5000/data')
+        response.raise_for_status()  # Raise HTTPError for bad responses
         return response.json()
-    else:
+    except requests.RequestException as e:
+        st.error(f"Error fetching data: {e}")
         return []
 
 # Main loop to update the dashboard
@@ -28,3 +30,4 @@ while True:
     # Auto-refresh every 10 seconds
     time.sleep(10)
     st.experimental_rerun()
+
