@@ -50,7 +50,7 @@ def receive_json():
     }
     
     # Inference dummy
-    inference = data['nodetags'].get('vcc', {}).get('Value')
+    inference = data['nodetags'].get('hum', {}).get('Value')
 
     # Push the inference to Resiot
     resiot_http_push('3a6e00000000aaaa', filtered_data['deveui'], 'smk', inference)
