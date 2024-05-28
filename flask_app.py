@@ -1,7 +1,7 @@
 # flask_app.py
 from flask import Flask, request, jsonify
 from collections import deque
-import joblib
+#import joblib
 import numpy as np
 import json
 import urllib.request
@@ -9,6 +9,7 @@ import logging
 
 app = Flask(__name__)
 
+# Function to push data to Resiot
 def resiot_http_push(appEUI, devEUI, name, value):
     base_url = "http://15.160.194.92:58089"
     token = "3cef9fccfdf0de6a48a679239e1bed0c"
@@ -18,7 +19,7 @@ def resiot_http_push(appEUI, devEUI, name, value):
         "Authorization": token
     }
     endpoint = f"{base_url}/api/application/{appEUI}/nodes/{devEUI}/tag/{name}/value"
-    data = json.dumps({"value": value}).encode('utf-8')
+    data = json.dumps({"value": str(value)}).encode('utf-8')  # Ensure the value is a string
     req = urllib.request.Request(endpoint, data=data, headers=headers, method="PUT")
     try:
         with urllib.request.urlopen(req) as response:
@@ -26,7 +27,6 @@ def resiot_http_push(appEUI, devEUI, name, value):
             logging.info(f"Update for {name} was successful. Response: {response_body}")
     except urllib.error.HTTPError as e:
         logging.error(f"Update for {name} failed with status code {e.code}. Response: {e.read().decode()}")
-
 
 # Store only the last 10 messages
 max_messages = 10
@@ -55,7 +55,7 @@ def receive_json():
     }
     
     # Inference dummy
-    inference = data['nodetags'].get('hum', {}).get('Value')
+    inference = filtered_data['hum']
 
     # Push the inference to Resiot
     resiot_http_push('3a6e00000000aaaa', filtered_data['deveui'], 'smk', inference)
