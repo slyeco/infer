@@ -1,6 +1,11 @@
 # flask_app.py
 from flask import Flask, request, jsonify
 from collections import deque
+import joblib
+import numpy as np
+import json
+import urllib.request
+import logging
 
 app = Flask(__name__)
 
