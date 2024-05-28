@@ -4,6 +4,25 @@ from collections import deque
 
 app = Flask(__name__)
 
+def resiot_http_push(appEUI, devEUI, name, value):
+    base_url = "http://15.160.194.92:58089"
+    token = "3cef9fccfdf0de6a48a679239e1bed0c"
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": token
+    }
+    endpoint = f"{base_url}/api/application/{appEUI}/nodes/{devEUI}/tag/{name}/value"
+    data = json.dumps({"value": value}).encode('utf-8')
+    req = urllib.request.Request(endpoint, data=data, headers=headers, method="PUT")
+    try:
+        with urllib.request.urlopen(req) as response:
+            response_body = response.read().decode()
+            logging.info(f"Update for {name} was successful. Response: {response_body}")
+    except urllib.error.HTTPError as e:
+        logging.error(f"Update for {name} failed with status code {e.code}. Response: {e.read().decode()}")
+
+
 # Store only the last 10 messages
 max_messages = 10
 received_data = deque(maxlen=max_messages)
@@ -29,6 +48,13 @@ def receive_json():
         'pre': data['nodetags'].get('pre', {}).get('Value'),
         'vcc': data['nodetags'].get('vcc', {}).get('Value')
     }
+    
+    # Inference dummy
+    inference = data['nodetags'].get('vcc', {}).get('Value')
+
+    # Push the inference to Resiot
+    resiot_http_push('3a6e00000000aaaa', filtered_data['deveui'], 'smk', inference)
+    
     received_data.append(filtered_data)
     return jsonify({"status": "success", "received_data": filtered_data})
 
