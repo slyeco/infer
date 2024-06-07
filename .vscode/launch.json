@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "/home/max/infer/sensordata/rf.joblib",
+                "157829.84375 15906796.0 15198516.0 16646177.0 1090231.625 1057305.125 1024768.5625 179586.109375 229647.90625 261892.578125"
+            ]
+        }
+    ]
+}
