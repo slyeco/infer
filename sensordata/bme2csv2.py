@@ -55,3 +55,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     process_files(args.input_path, args.output_file, args.label)
+
+# Example use: python bme2csv2.py /home/max/infer/sensordata/firejson fire.csv fire
