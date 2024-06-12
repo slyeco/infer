@@ -1,12 +1,23 @@
 # flask_app.py
 from flask import Flask, request, jsonify
 from collections import deque
+import joblib
+import numpy as np
 
 app = Flask(__name__)
 
 # Store only the last 10 messages
 max_messages = 10
 received_data = deque(maxlen=max_messages)
+
+# Load the model
+model_file_path = 'sensordata/rf.joblib'
+model = joblib.load(model_file_path)
+
+def predict_inference(model, resistance_values):
+    input_array = np.array(resistance_values).reshape(1, -1)
+    probabilities = model.predict_proba(input_array)
+    return probabilities[0]  # return probabilities for the single input instance
 
 @app.route('/receive', methods=['POST'])
 def receive_json():
@@ -29,6 +40,18 @@ def receive_json():
         'pre': data['nodetags'].get('pre', {}).get('Value'),
         'vcc': data['nodetags'].get('vcc', {}).get('Value')
     }
+
+    # Get resistance values
+    resistance_values = [
+        filtered_data['s0'], filtered_data['s1'], filtered_data['s2'], filtered_data['s3'],
+        filtered_data['s4'], filtered_data['s5'], filtered_data['s6'], filtered_data['s7'],
+        filtered_data['s8'], filtered_data['s9']
+    ]
+
+    # Predict inference probability
+    inference_probabilities = predict_inference(model, resistance_values)
+    filtered_data['inference_probabilities'] = inference_probabilities.tolist()  # Convert to list for JSON serialization
+
     received_data.append(filtered_data)
     return jsonify({"status": "success", "received_data": filtered_data})
 
