@@ -2,6 +2,9 @@ from flask import Flask, request, jsonify
 from collections import deque
 import joblib
 import numpy as np
+import smtplib
+from email.mime.text import MIMEText
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
@@ -12,6 +15,30 @@ received_data = deque(maxlen=max_messages)
 # Load the model
 model_file_path = 'sensordata/rf.joblib'
 model = joblib.load(model_file_path)
+
+# Email alert configuration
+EMAIL_ADDRESS = 'sly@sly.eco'
+EMAIL_PASSWORD = 'zypa rmea xpjp rura'
+ALERT_RECIPIENT = 'max@sly.eco'
+ALERT_THRESHOLD = 12.5
+ALERT_COOLDOWN = timedelta(minutes=30)
+last_alert_time = datetime.min
+
+def send_email_alert(pm2e5_value):
+    global last_alert_time
+    if datetime.now() - last_alert_time < ALERT_COOLDOWN:
+        return  # Skip sending the alert if within cooldown period
+    
+    msg = MIMEText(f"Alert: pm2e5 value exceeded threshold! Current value: {pm2e5_value}")
+    msg['Subject'] = 'PM2.5 Alert'
+    msg['From'] = EMAIL_ADDRESS
+    msg['To'] = ALERT_RECIPIENT
+
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+        server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+        server.sendmail(EMAIL_ADDRESS, ALERT_RECIPIENT, msg.as_string())
+    
+    last_alert_time = datetime.now()
 
 def predict_inference(model, resistance_values):
     input_array = np.array(resistance_values).reshape(1, -1)
@@ -40,6 +67,11 @@ def receive_json():
         'vcc': data['nodetags'].get('vcc', {}).get('Value'),
         'pm2e5': data['nodetags'].get('pm2e5', {}).get('Value')
     }
+
+    # Check pm2e5 value and send alert if necessary
+    pm2e5_value = filtered_data.get('pm2e5')
+    if pm2e5_value is not None and pm2e5_value > ALERT_THRESHOLD:
+        send_email_alert(pm2e5_value)
 
     # Get resistance values
     resistance_values = [
