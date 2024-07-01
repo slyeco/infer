@@ -19,7 +19,8 @@ model = joblib.load(model_file_path)
 # Email alert configuration
 EMAIL_ADDRESS = 'sly@sly.eco'
 EMAIL_PASSWORD = 'zypa rmea xpjp rura'
-ALERT_RECIPIENT = 'max@sly.eco'
+#ALERT_RECIPIENT = 'max@sly.eco'
+ALERT_RECIPIENTS = ['max@sly.eco', 'davide@sly.eco']
 ALERT_THRESHOLD = 12.5
 ALERT_COOLDOWN = timedelta(minutes=30)
 last_alert_time = datetime.min
@@ -32,11 +33,13 @@ def send_email_alert(pm2e5_value):
     msg = MIMEText(f"Alert: pm2e5 value exceeded threshold! Current value: {pm2e5_value}")
     msg['Subject'] = 'PM2.5 Alert'
     msg['From'] = EMAIL_ADDRESS
-    msg['To'] = ALERT_RECIPIENT
+    #msg['To'] = ALERT_RECIPIENT
+    msg['To'] = ", ".join(ALERT_RECIPIENTS)
 
     with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
         server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-        server.sendmail(EMAIL_ADDRESS, ALERT_RECIPIENT, msg.as_string())
+        #server.sendmail(EMAIL_ADDRESS, ALERT_RECIPIENT, msg.as_string())
+        server.sendmail(EMAIL_ADDRESS, ALERT_RECIPIENTS, msg.as_string())
     
     last_alert_time = datetime.now()
 
