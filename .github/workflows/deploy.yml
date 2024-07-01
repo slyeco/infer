@@ -28,8 +28,6 @@ jobs:
         cd /home/ubuntu/infer
         source venv/bin/activate
         pip install -r requirements.txt
-        pkill -f flask_app.py || true
-        pkill -f streamlit || true
-        nohup python flask_app.py &
-        nohup streamlit run streamlit_app.py --server.port 8501 &
+        sudo systemctl restart flask_app.service
+        sudo systemctl restart streamlit_app.service
         EOF
