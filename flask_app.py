@@ -1,4 +1,3 @@
-# flask_app.py
 from flask import Flask, request, jsonify
 from collections import deque
 import joblib
@@ -38,7 +37,8 @@ def receive_json():
         'tmp': data['nodetags'].get('tmp', {}).get('Value'),
         'hum': data['nodetags'].get('hum', {}).get('Value'),
         'pre': data['nodetags'].get('pre', {}).get('Value'),
-        'vcc': data['nodetags'].get('vcc', {}).get('Value')
+        'vcc': data['nodetags'].get('vcc', {}).get('Value'),
+        'pm2e5': data['nodetags'].get('pm2e5', {}).get('Value')
     }
 
     # Get resistance values
