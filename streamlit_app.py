@@ -4,7 +4,7 @@ import requests
 import pandas as pd
 import time
 
-st.title('Treeage Inference Dashboard')
+st.title('Treeage Sensor Data')
 
 # Fetch data from the Flask server
 def fetch_data():
