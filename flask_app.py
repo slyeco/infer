@@ -28,7 +28,7 @@ last_alert_time = datetime.min
 sensor_last_alert_times = {}
 
 # ResIOT configuration
-appEUI = "0000000000001001"
+appEUI = "3A6E00000000AAAA"
 resiot_base_url = "http://15.160.194.92:58089"
 resiot_token = "3cef9fccfdf0de6a48a679239e1bed0c"
 resiot_headers = {
@@ -43,6 +43,7 @@ def send_email_alert(pm2e5_value, deveui):
     last_sensor_alert = sensor_last_alert_times.get(deveui, datetime.min)  # Get last alert time for this sensor (default min if not found)
     
     if current_time - last_sensor_alert < timedelta(minutes=15):  # Check cooldown for this sensor
+        print("Skipping alert due to cooldown period.")
         return  # Skip sending the alert if within cooldown period
 
     # Update last alert time for the sensor
@@ -53,9 +54,13 @@ def send_email_alert(pm2e5_value, deveui):
     msg['From'] = EMAIL_ADDRESS
     msg['To'] = ", ".join(ALERT_RECIPIENTS)
 
+    print("Preparing to send email...")
     with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
         server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+        print("Logged in to SMTP server.")
         server.sendmail(EMAIL_ADDRESS, ALERT_RECIPIENTS, msg.as_string())
+        print("Email sent.")
+
 
 def predict_inference(model, resistance_values):
     input_array = np.array(resistance_values).reshape(1, -1)

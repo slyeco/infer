@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from flask_app import send_email_alert, update_device_parameters, appEUI
 
 class TestFlaskApp(unittest.TestCase):
@@ -9,13 +9,16 @@ class TestFlaskApp(unittest.TestCase):
         # Set up test data
         pm2e5_value = 18
         deveui = 'test_deveui'
+        
+        # Create a mock SMTP instance
+        instance = MagicMock()
+        mock_smtp.return_value = instance
 
         # Call the function
         send_email_alert(pm2e5_value, deveui)
 
         # Check if the SMTP server was called correctly
         mock_smtp.assert_called_with('smtp.gmail.com', 465)
-        instance = mock_smtp.return_value
         instance.login.assert_called_with('sly@sly.eco', 'zypa rmea xpjp rura')
         instance.sendmail.assert_called_once()
         args = instance.sendmail.call_args[0]
