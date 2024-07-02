@@ -5,6 +5,8 @@ import numpy as np
 import smtplib
 from email.mime.text import MIMEText
 from datetime import datetime, timedelta
+import json
+import urllib.request
 
 app = Flask(__name__)
 
@@ -19,13 +21,21 @@ model = joblib.load(model_file_path)
 # Email alert configuration
 EMAIL_ADDRESS = 'sly@sly.eco'
 EMAIL_PASSWORD = 'zypa rmea xpjp rura'
-#ALERT_RECIPIENT = 'max@sly.eco'
 ALERT_RECIPIENTS = ['max@sly.eco', 'davide@sly.eco']
 ALERT_THRESHOLD = 12.5
 ALERT_COOLDOWN = timedelta(minutes=30)
 last_alert_time = datetime.min
 sensor_last_alert_times = {}
 
+# ResIOT configuration
+appEUI = "0000000000001001"
+resiot_base_url = "http://15.160.194.92:58089"
+resiot_token = "3cef9fccfdf0de6a48a679239e1bed0c"
+resiot_headers = {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+    "Authorization": resiot_token
+}
 
 def send_email_alert(pm2e5_value, deveui):
     global sensor_last_alert_times
@@ -47,11 +57,27 @@ def send_email_alert(pm2e5_value, deveui):
         server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
         server.sendmail(EMAIL_ADDRESS, ALERT_RECIPIENTS, msg.as_string())
 
-
 def predict_inference(model, resistance_values):
     input_array = np.array(resistance_values).reshape(1, -1)
     probabilities = model.predict_proba(input_array)
     return probabilities[0]  # return probabilities for the single input instance
+
+def update_device_parameters(appEUI, devEUI, params_to_update):
+    for name, value in params_to_update:
+        endpoint = f"{resiot_base_url}/api/application/{appEUI}/nodes/{devEUI}/tag/{name}/value"
+        data = json.dumps({"value": value}).encode('utf-8')  # Convert the data to JSON and then to bytes
+        
+        # Create a request object
+        req = urllib.request.Request(endpoint, data=data, headers=resiot_headers, method="PUT")
+        
+        try:
+            # Send the request
+            with urllib.request.urlopen(req) as response:
+                response_body = response.read().decode()
+                print(f"Update for {name} was successful. Response: {response_body}")
+        except urllib.error.HTTPError as e:
+            # Handle HTTP errors
+            print(f"Update for {name} failed with status code {e.code}. Response: {e.read().decode()}")
 
 @app.route('/receive', methods=['POST'])
 def receive_json():
@@ -78,8 +104,15 @@ def receive_json():
 
     # Check pm2e5 value and send alert if necessary
     pm2e5_value = filtered_data.get('pm2e5')
+    deveui = filtered_data.get('deveui')
     if pm2e5_value is not None and pm2e5_value > ALERT_THRESHOLD:
-        send_email_alert(pm2e5_value)
+        send_email_alert(pm2e5_value, deveui)
+    
+    # Update smk parameter in ResIOT if pm2e5 value exceeds 15
+    if pm2e5_value is not None and pm2e5_value > 15:
+        update_device_parameters(appEUI, deveui, [('smk', 90)])
+    else:
+        update_device_parameters(appEUI, deveui, [('smk', None)])
 
     # Get resistance values
     resistance_values = [
