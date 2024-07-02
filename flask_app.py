@@ -24,24 +24,29 @@ ALERT_RECIPIENTS = ['max@sly.eco', 'davide@sly.eco']
 ALERT_THRESHOLD = 12.5
 ALERT_COOLDOWN = timedelta(minutes=30)
 last_alert_time = datetime.min
+sensor_last_alert_times = {}
 
-def send_email_alert(pm2e5_value):
-    global last_alert_time
-    if datetime.now() - last_alert_time < ALERT_COOLDOWN:
-        return  # Skip sending the alert if within cooldown period
+
+def send_email_alert(pm2e5_value, deveui):
+    global sensor_last_alert_times
+    current_time = datetime.now()
+    last_sensor_alert = sensor_last_alert_times.get(deveui, datetime.min)  # Get last alert time for this sensor (default min if not found)
     
-    msg = MIMEText(f"Alert: pm2e5 value exceeded threshold! Current value: {pm2e5_value}")
+    if current_time - last_sensor_alert < timedelta(minutes=15):  # Check cooldown for this sensor
+        return  # Skip sending the alert if within cooldown period
+
+    # Update last alert time for the sensor
+    sensor_last_alert_times[deveui] = current_time
+    
+    msg = MIMEText(f"Alert: pm2e5 value exceeded threshold for sensor {deveui}! Current value: {pm2e5_value}")
     msg['Subject'] = 'PM2.5 Alert'
     msg['From'] = EMAIL_ADDRESS
-    #msg['To'] = ALERT_RECIPIENT
     msg['To'] = ", ".join(ALERT_RECIPIENTS)
 
     with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
         server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-        #server.sendmail(EMAIL_ADDRESS, ALERT_RECIPIENT, msg.as_string())
         server.sendmail(EMAIL_ADDRESS, ALERT_RECIPIENTS, msg.as_string())
-    
-    last_alert_time = datetime.now()
+
 
 def predict_inference(model, resistance_values):
     input_array = np.array(resistance_values).reshape(1, -1)
