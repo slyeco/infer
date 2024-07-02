@@ -32,4 +32,4 @@ def update_smk_parameter(appEUI, devEUI, value):
 
 # Test script to set the 'smk' value to 90 for devEUI 3A6E00000000A017
 if __name__ == '__main__':
-    update_smk_parameter(appEUI, devEUI, 0)
+    update_smk_parameter(appEUI, devEUI, 90)

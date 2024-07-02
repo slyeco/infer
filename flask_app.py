@@ -61,7 +61,6 @@ def send_email_alert(pm2e5_value, deveui):
         server.sendmail(EMAIL_ADDRESS, ALERT_RECIPIENTS, msg.as_string())
         print("Email sent.")
 
-
 def predict_inference(model, resistance_values):
     input_array = np.array(resistance_values).reshape(1, -1)
     probabilities = model.predict_proba(input_array)
@@ -70,7 +69,7 @@ def predict_inference(model, resistance_values):
 def update_device_parameters(appEUI, devEUI, params_to_update):
     for name, value in params_to_update:
         endpoint = f"{resiot_base_url}/api/application/{appEUI}/nodes/{devEUI}/tag/{name}/value"
-        data = json.dumps({"value": value}).encode('utf-8')  # Convert the data to JSON and then to bytes
+        data = json.dumps({"value": str(value) if value is not None else ""}).encode('utf-8')  # Convert the data to JSON and then to bytes
         
         # Create a request object
         req = urllib.request.Request(endpoint, data=data, headers=resiot_headers, method="PUT")
