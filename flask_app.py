@@ -61,8 +61,15 @@ def send_email_alert(pm2e5_value, deveui):
         server.sendmail(EMAIL_ADDRESS, ALERT_RECIPIENTS, msg.as_string())
         print("Email sent.")
 
+def calculate_deltas(resistance_values):
+    # Calculate the deltas as s1 - s0, s2 - s1, ..., s9 - s8
+    deltas = [resistance_values[i+1] - resistance_values[i] for i in range(len(resistance_values) - 1)]
+    return deltas
+
 def predict_inference(model, resistance_values):
-    input_array = np.array(resistance_values).reshape(1, -1)
+    deltas = calculate_deltas(resistance_values)
+    
+    input_array = np.array(deltas).reshape(1, -1)
     probabilities = model.predict_proba(input_array)
     return probabilities[0]  # return probabilities for the single input instance
 
