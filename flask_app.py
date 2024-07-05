@@ -15,7 +15,7 @@ max_messages = 10
 received_data = deque(maxlen=max_messages)
 
 # Load the model
-model_file_path = 'sensordata/rf.joblib'
+model_file_path = 'sensordata/rf_model_new.joblib'
 model = joblib.load(model_file_path)
 
 # Email alert configuration
