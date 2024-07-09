@@ -7,6 +7,8 @@ from email.mime.text import MIMEText
 from datetime import datetime, timedelta
 import json
 import urllib.request
+import influxdb_client
+from influxdb_client.client.write_api import SYNCHRONOUS
 
 app = Flask(__name__)
 
@@ -36,6 +38,19 @@ resiot_headers = {
     "Accept": "application/json",
     "Authorization": resiot_token
 }
+
+# InfluxDB v2 configuration
+bucket = "resiot"
+org = "sly"
+token = "4P2zD5Vc79EP40QdMbUcNR7Wor6s2JlUSz44MSjlJtBGL_5AFC78nwWwSkiTwzXD22pG-vJWu5R8AocA8ZBAmw=="
+url = "http://ec2-15-160-116-77.eu-south-1.compute.amazonaws.com:8086"
+
+client = influxdb_client.InfluxDBClient(
+    url=url,
+    token=token,
+    org=org
+)
+write_api = client.write_api(write_options=SYNCHRONOUS)
 
 def send_email_alert(pm2e5_value, deveui):
     global sensor_last_alert_times
@@ -90,6 +105,16 @@ def update_device_parameters(appEUI, devEUI, params_to_update):
             # Handle HTTP errors
             print(f"Update for {name} failed with status code {e.code}. Response: {e.read().decode()}")
 
+def write_to_influxdb(devEui, appEui, smk_value):
+    timestamp = datetime.utcnow()
+    p = influxdb_client.Point("sensor_data") \
+        .tag("devEui", devEui) \
+        .tag("appEui", appEui) \
+        .field("smk", smk_value) \
+        .time(timestamp)
+    write_api.write(bucket=bucket, org=org, record=p)
+    print("Data written to InfluxDB successfully.")
+
 @app.route('/receive', methods=['POST'])
 def receive_json():
     data = request.json
@@ -120,10 +145,11 @@ def receive_json():
         send_email_alert(pm2e5_value, deveui)
     
     # Update smk parameter in ResIOT if pm2e5 value exceeds 15
-    if pm2e5_value is not None and pm2e5_value > 15:
-        update_device_parameters(appEUI, deveui, [('smk', 90)])
-    else:
-        update_device_parameters(appEUI, deveui, [('smk', None)])
+    smk_value = 90 if pm2e5_value is not None and pm2e5_value > 15 else None
+    update_device_parameters(appEUI, deveui, [('smk', smk_value)])
+
+    # Write to InfluxDB
+    write_to_influxdb(deveui, appEUI, smk_value if smk_value is not None else 0)
 
     # Get resistance values
     resistance_values = [
