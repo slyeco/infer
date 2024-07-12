@@ -106,6 +106,9 @@ def update_device_parameters(appEUI, devEUI, params_to_update):
             print(f"Update for {name} failed with status code {e.code}. Response: {e.read().decode()}")
 
 def write_to_influxdb(devEui, appEui, smk_value):
+    if smk_value is None:
+        smk_value = 0  # Ensure smk_value is numeric
+
     timestamp = datetime.utcnow()
     p = influxdb_client.Point("sensor_data") \
         .tag("devEui", devEui) \
